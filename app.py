@@ -57,6 +57,19 @@ CLASS_COLORS = {
     2: (255, 220, 40, 140),
 }
 
+# Held-out test-set results from the completed training notebook.
+# These are dataset-level metrics, NOT the score of the uploaded slice.
+TEST_METRICS = {
+    "slices": 8680,
+    "volumes": 56,
+    "foreground_dice": 0.7816,
+    "foreground_iou": 0.6414,
+    "foreground_recall": 0.8364,
+    "foreground_precision": 0.7335,
+    "class1_dice": 0.7858,
+    "class2_dice": 0.7695,
+}
+
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 USE_AMP = torch.cuda.is_available()
@@ -156,7 +169,11 @@ def build_model():
             "or set CHECKPOINT_PATH."
         )
 
-    ckpt = torch.load(CHECKPOINT_PATH, map_location=device)
+    ckpt = torch.load(
+        CHECKPOINT_PATH,
+        map_location=device,
+        weights_only=False,
+    )
     state_dict = ckpt.get("model_state_dict", ckpt)
     model.load_state_dict(state_dict)
 
@@ -254,6 +271,15 @@ def run_inference(uploaded_file, display_channel):
         raw_image = h["image"][:]
         raw_mask = h["mask"][:] if "mask" in h else None
 
+    if raw_image.size == 0 or not np.isfinite(raw_image).all():
+        raise ValueError("The MRI image is empty or contains invalid values.")
+
+    if np.count_nonzero(raw_image) == 0:
+        raise ValueError(
+            "This MRI slice contains no non-zero image data. "
+            "Please upload a valid MRI slice."
+        )
+
     image_4ch = prepare_4ch_image(raw_image)
     tensor = (
         torch.from_numpy(image_4ch)
@@ -285,7 +311,7 @@ def run_inference(uploaded_file, display_channel):
 
     summary_lines = [
         f"**Predicted class breakdown** "
-        f"(input channel {ch_idx} shown as background):"
+        f"(MRI channel {ch_idx} shown as background):"
     ]
 
     total_px = pred_mask.size
@@ -330,7 +356,18 @@ st.markdown(
     "SegFormer-B2 fine-tuned on 4-channel MRI slices "
     "(T1 / T1ce / T2 / FLAIR-style inputs)."
 )
-st.info("Research demo only — not a diagnostic tool.")
+st.warning("Research demo only — not a diagnostic tool.")
+
+m1, m2, m3, m4 = st.columns(4)
+m1.metric("Tumor-region Dice", "78.16%")
+m2.metric("Recall", "83.64%")
+m3.metric("Precision", "73.35%")
+m4.metric("Held-out slices", "8,680")
+
+st.caption(
+    "Model performance above is from the held-out test set "
+    "(56 volumes). It is not the score of the uploaded image."
+)
 
 st.divider()
 
