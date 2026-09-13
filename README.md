@@ -1,0 +1,7 @@
+NeuroSeg AI is an AI-powered brain tumor segmentation system designed to assist in identifying and outlining tumor regions in MRI scans. The project uses a SegFormer-B2 semantic segmentation model trained on multi-channel brain MRI data to classify each pixel into three categories: background, necrotic/non-enhancing tumor core (NCR/NET), and edema + enhancing tumor (ED/ET combined).
+
+The system accepts an .h5 MRI slice containing four MRI channels, applies preprocessing and normalization, and uses the trained deep-learning model to generate a tumor segmentation mask. Test-time augmentation using horizontal and vertical flips is used during inference to improve prediction robustness. The resulting segmentation is overlaid on the MRI image so that users can visually compare the predicted tumor region with the ground-truth mask when it is available.
+
+On the held-out test set, the model achieved a 78.16% tumor-region Dice score, with 83.64% recall and 73.35% precision, evaluated across 8,680 slices from 56 volumes. We also tested the deployed application on unseen MRI slices to verify that the model can produce meaningful segmentations outside the development examples.
+
+The project is intended as a research and educational prototype, not as a clinical diagnostic system. Our goal is to demonstrate how modern deep-learning segmentation techniques can help analyze brain MRI scans and provide an accessible interface for experimenting with automated tumor-region segmentation
