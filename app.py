@@ -422,7 +422,7 @@ def run_inference(uploaded_file, display_channel):
     ]
 
     summary_lines.append(
-        f"- 🔥 Grad-CAM focus class: **{CLASS_NAMES[explain_class]}**"
+        f"-  Grad-CAM focus class: **{CLASS_NAMES[explain_class]}**"
     )
 
     total_px = pred_mask.size
@@ -462,7 +462,7 @@ def run_inference(uploaded_file, display_channel):
 # Streamlit UI
 # =====================================================================
 
-st.title("🧠 NeuroSeg AI — Brain Tumor Segmentation")
+st.title(" NeuroSeg AI — Brain Tumor Segmentation")
 st.markdown(
     "SegFormer-B2 fine-tuned on 4-channel MRI slices "
     "(T1 / T1ce / T2 / FLAIR-style inputs)."
@@ -551,7 +551,7 @@ with col2:
                     )
 
                 st.markdown(
-                    "**🔥 Grad-CAM:** brighter regions indicate image areas "
+                    "** Grad-CAM:** brighter regions indicate image areas "
                     "that contributed more strongly to the selected predicted "
                     "tumor class. This is an explainability visualization, "
                     "not a diagnostic confidence map."
