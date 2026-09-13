@@ -8,3 +8,25 @@ The project is intended as a research and educational prototype, not as a clinic
 
 🤖 AI Tools Disclosure:
 ChatGPT was used as an AI-assisted development tool during the project for code development, debugging, explanation of machine-learning concepts, troubleshooting deployment issues, improving the Streamlit interface, and preparing project documentation. The model architecture, training process, dataset preparation, experimentation, and evaluation were developed and performed as part of the project team’s work.
+
+
+🧪 Demo Results
+<img width="1311" height="554" alt="image" src="https://github.com/user-attachments/assets/ffef0f17-64e0-493f-87ec-02489fc85b89" />
+<img width="1282" height="526" alt="image" src="https://github.com/user-attachments/assets/9a9942ea-6c4a-4cc9-996c-60c8526220ae" />
+
+
+Example 1 — Unseen BraTS 2020 slice
+
+Metric	Result
+NCR/NET Dice	92.3%
+ED/ET Dice	100%
+
+Prediction closely matches the ground-truth tumor segmentation, while Grad-CAM highlights the region contributing to the model's prediction.
+
+Example 2 — Unseen BraTS 2020 slice
+
+Metric	Result
+NCR/NET Dice	90.1%
+ED/ET Dice	100%
+
+These are individual demonstration-slice results, not the overall test-set performance.
