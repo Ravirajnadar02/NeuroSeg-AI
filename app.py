@@ -5,7 +5,6 @@ Upload a single BraTS-style 4-channel MRI slice (.h5, with an "image"
 dataset of shape (H, W, 4) and optionally a "mask" dataset) and get back
 the model's tumor segmentation prediction.
 
-Research demo only — not a diagnostic tool.
 """
 
 import io
@@ -253,12 +252,107 @@ def overlay_mask(gray_rgb, mask, alpha_scale=1.0):
 
 
 # =====================================================================
+# Grad-CAM — SegFormer-compatible explainability
+# =====================================================================
+
+def make_gradcam(model, tensor, target_class):
+    """
+    Compute a Grad-CAM heatmap for a segmentation class.
+
+    The hook is placed on SegFormer's decoder fusion layer. The target
+    score is the summed logit for the selected class across the image.
+    """
+    target_layer = getattr(model.decode_head, "linear_fuse", None)
+    if target_layer is None:
+        target_layer = model.decode_head
+
+    activations = []
+    gradients = []
+
+    def forward_hook(module, module_input, output):
+        if torch.is_tensor(output):
+            activations.append(output)
+            output.register_hook(lambda grad: gradients.append(grad))
+
+    handle = target_layer.register_forward_hook(forward_hook)
+
+    try:
+        model.zero_grad(set_to_none=True)
+
+        with torch.enable_grad():
+            logits = model(tensor).logits
+
+            if logits.shape[-2:] != tensor.shape[-2:]:
+                logits = F.interpolate(
+                    logits,
+                    size=tensor.shape[-2:],
+                    mode="bilinear",
+                    align_corners=False,
+                )
+
+            score = logits[:, target_class].sum()
+            score.backward()
+
+        if not activations or not gradients:
+            raise RuntimeError("Grad-CAM feature/gradient map was not captured.")
+
+        activation = activations[-1]
+        gradient = gradients[-1]
+
+        weights = gradient.mean(dim=(2, 3), keepdim=True)
+        cam = (weights * activation).sum(dim=1, keepdim=True)
+        cam = F.relu(cam)
+
+        cam = F.interpolate(
+            cam,
+            size=tensor.shape[-2:],
+            mode="bilinear",
+            align_corners=False,
+        )[0, 0]
+
+        cam = cam.detach().cpu().numpy()
+        cam -= cam.min()
+
+        max_val = cam.max()
+        if max_val > 1e-8:
+            cam /= max_val
+
+        return cam.astype(np.float32)
+
+    finally:
+        handle.remove()
+        model.zero_grad(set_to_none=True)
+
+
+def gradcam_overlay(gray_rgb, cam, alpha=0.45):
+    """Overlay a Grad-CAM heatmap on the displayed MRI channel."""
+    heat = np.clip(cam * 255.0, 0, 255).astype(np.uint8)
+
+    heat_rgb = np.zeros((*heat.shape, 3), dtype=np.uint8)
+    heat_rgb[..., 0] = heat
+    heat_rgb[..., 1] = np.clip(
+        heat.astype(np.float32) * 0.75, 0, 255
+    ).astype(np.uint8)
+    heat_rgb[..., 2] = np.clip(
+        (255 - heat).astype(np.float32) * 0.15, 0, 255
+    ).astype(np.uint8)
+
+    base = gray_rgb.astype(np.float32)
+    blended = (
+        base * (1.0 - alpha)
+        + heat_rgb.astype(np.float32) * alpha
+    )
+
+    return np.clip(blended, 0, 255).astype(np.uint8)
+
+
+# =====================================================================
 # Main prediction function
 # =====================================================================
 
 def run_inference(uploaded_file, display_channel):
     if uploaded_file is None:
-        return None, None, "Upload a .h5 file to get started."
+        return None, None, None, "Upload a .h5 file to get started."
 
     file_bytes = uploaded_file.getvalue()
 
@@ -292,6 +386,18 @@ def run_inference(uploaded_file, display_channel):
 
     probs = predict_probs_tta(model, tensor)
 
+    # Explain the tumor class occupying the most predicted pixels.
+    predicted_for_selection = torch.argmax(probs, dim=1)[0]
+    tumor_pixels = [
+        int((predicted_for_selection == cls).sum().item())
+        for cls in (1, 2)
+    ]
+    explain_class = (1, 2)[int(np.argmax(tumor_pixels))]
+
+    # Grad-CAM is computed on the original (non-TTA) image so that
+    # the heatmap has a single, easy-to-interpret spatial reference.
+    cam = make_gradcam(model, tensor, explain_class)
+
     target_size = (image_4ch.shape[1], image_4ch.shape[2])
 
     if probs.shape[-2:] != target_size:
@@ -308,11 +414,16 @@ def run_inference(uploaded_file, display_channel):
     gray_rgb = to_display_gray(image_4ch[ch_idx])
 
     pred_overlay = overlay_mask(gray_rgb, pred_mask)
+    gradcam_img = gradcam_overlay(gray_rgb, cam)
 
     summary_lines = [
         f"**Predicted class breakdown** "
         f"(MRI channel {ch_idx} shown as background):"
     ]
+
+    summary_lines.append(
+        f"- 🔥 Grad-CAM focus class: **{CLASS_NAMES[explain_class]}**"
+    )
 
     total_px = pred_mask.size
 
@@ -344,7 +455,7 @@ def run_inference(uploaded_file, display_channel):
             "showing prediction only._"
         )
 
-    return pred_overlay, gt_overlay, "\n".join(summary_lines)
+    return pred_overlay, gt_overlay, gradcam_img, "\n".join(summary_lines)
 
 
 # =====================================================================
@@ -404,14 +515,14 @@ with col2:
                 with st.spinner(
                     "Running SegFormer-B2 segmentation..."
                 ):
-                    pred_overlay, gt_overlay, summary = run_inference(
+                    pred_overlay, gt_overlay, gradcam_img, summary = run_inference(
                         uploaded_file,
                         display_channel,
                     )
 
                 st.success("Segmentation completed.")
 
-                image_col1, image_col2 = st.columns(2)
+                image_col1, image_col2, image_col3 = st.columns(3)
 
                 with image_col1:
                     st.image(
@@ -432,6 +543,19 @@ with col2:
                             "No ground-truth mask was found in this file."
                         )
 
+                with image_col3:
+                    st.image(
+                        gradcam_img,
+                        caption="Grad-CAM explainability",
+                        use_container_width=True,
+                    )
+
+                st.markdown(
+                    "**🔥 Grad-CAM:** brighter regions indicate image areas "
+                    "that contributed more strongly to the selected predicted "
+                    "tumor class. This is an explainability visualization, "
+                    "not a diagnostic confidence map."
+                )
                 st.markdown(summary)
 
             except Exception as exc:
