@@ -48,7 +48,7 @@ CHECKPOINT_PATH = os.environ.get(
 CLASS_NAMES = {
     0: "background",
     1: "necrotic_non_enhancing_tumor_core_NCR_NET",
-    2: "edema_and_enhancing_tumor_ED_EC",
+    2: "edema_and_enhancing_tumor_ED_ET",
 }
 
 CLASS_COLORS = {
@@ -441,7 +441,7 @@ st.divider()
 
 st.markdown(
     """
-**Legend:** 🔴 red = class 1, 🟡 yellow = class 2,
+**Legend:** 🔴 Red = NCR/NET , 🟡 yellow = ED/ET,
 transparent = background.
 
 **Before public submission:** verify `CLASS_NAMES` against your
