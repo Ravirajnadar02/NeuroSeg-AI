@@ -9,6 +9,9 @@ The project is intended as a research and educational prototype, not as a clinic
 🤖 AI Tools Disclosure:
 ChatGPT was used as an AI-assisted development tool during the project for code development, debugging, explanation of machine-learning concepts, troubleshooting deployment issues, improving the Streamlit interface, and preparing project documentation. The model architecture, training process, dataset preparation, experimentation, and evaluation were developed and performed as part of the project team’s work.
 
+How it works
+How it works: Upload a 4-channel BraTS-style .h5 MRI slice → select the MRI channel for visualization → run SegFormer-B2 segmentation → view the predicted tumor regions → compare against ground truth when available → inspect Grad-CAM to understand the regions influencing the prediction → review Dice and class-level results.
+
 
 🧪 Demo Results
 <img width="1311" height="554" alt="image" src="https://github.com/user-attachments/assets/ffef0f17-64e0-493f-87ec-02489fc85b89" />
@@ -30,3 +33,28 @@ NCR/NET Dice	90.1%
 ED/ET Dice	100%
 
 These are individual demonstration-slice results, not the overall test-set performance.
+
+⚠️ Current Limitations
+1. Limited dataset diversity:
+The model is trained and evaluated on BraTS 2020 data, so performance on MRI scans from other hospitals, scanners, populations, or datasets may differ.
+
+2. 2D slice-based segmentation:
+The current system processes individual 2D MRI slices, rather than analyzing the complete 3D brain volume. This can lose spatial information between adjacent slices.
+
+3. Limited tumor classes
+Your current model predicts 3 classes: background, NCR/NET, and combined ED/ET. It does not separately distinguish every possible tumor sub-region.
+
+4. No clinical validation
+The reported 78.16% tumor-region Dice is a research/test-set result, not clinical validation. The system has not been evaluated by radiologists or in a clinical workflow.
+
+5. Input format dependency
+The demo expects a specific 4-channel .h5 format. Standard MRI files such as DICOM or NIfTI cannot currently be uploaded directly.
+
+6. CPU inference can be slower
+The application can run without a GPU, but inference may be slower on CPU than on a CUDA-enabled GPU.
+
+7. Grad-CAM is an explanation, not a guarantee
+Grad-CAM shows regions that contributed to the model's prediction; it does not prove that the highlighted region is medically correct.
+
+8. Limited external testing
+Our additional demonstrations show strong results on unseen BraTS slices, but these are still from the BraTS dataset family. We have not yet performed a true external-dataset validation.
