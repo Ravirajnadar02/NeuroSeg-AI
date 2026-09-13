@@ -5,3 +5,6 @@ The system accepts an .h5 MRI slice containing four MRI channels, applies prepro
 On the held-out test set, the model achieved a 78.16% tumor-region Dice score, with 83.64% recall and 73.35% precision, evaluated across 8,680 slices from 56 volumes. We also tested the deployed application on unseen MRI slices to verify that the model can produce meaningful segmentations outside the development examples.
 
 The project is intended as a research and educational prototype, not as a clinical diagnostic system. Our goal is to demonstrate how modern deep-learning segmentation techniques can help analyze brain MRI scans and provide an accessible interface for experimenting with automated tumor-region segmentation
+
+🤖 AI Tools Disclosure:
+ChatGPT was used as an AI-assisted development tool during the project for code development, debugging, explanation of machine-learning concepts, troubleshooting deployment issues, improving the Streamlit interface, and preparing project documentation. The model architecture, training process, dataset preparation, experimentation, and evaluation were developed and performed as part of the project team’s work.
