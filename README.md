@@ -13,7 +13,8 @@ How it works
 How it works: Upload a 4-channel BraTS-style .h5 MRI slice → select the MRI channel for visualization → run SegFormer-B2 segmentation → view the predicted tumor regions → compare against ground truth when available → inspect Grad-CAM to understand the regions influencing the prediction → review Dice and class-level results.
 
 Flowchart of NeuroSeg-AI
-<img width="946" height="633" alt="image" src="https://github.com/user-attachments/assets/aace1ce3-e20e-4a61-ac18-9ee065dc8fdf" />
+<img width="684" height="1168" alt="WhatsApp Image 2026-09-14 at 11 13 36 PM" src="https://github.com/user-attachments/assets/6d5da80f-6728-449a-a2d1-5991bb08e22a" />
+
 
 
 
