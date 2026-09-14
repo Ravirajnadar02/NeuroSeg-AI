@@ -12,6 +12,10 @@ ChatGPT was used as an AI-assisted development tool during the project for code 
 How it works
 How it works: Upload a 4-channel BraTS-style .h5 MRI slice → select the MRI channel for visualization → run SegFormer-B2 segmentation → view the predicted tumor regions → compare against ground truth when available → inspect Grad-CAM to understand the regions influencing the prediction → review Dice and class-level results.
 
+Flowchart of NeuroSeg-AI
+<img width="946" height="633" alt="image" src="https://github.com/user-attachments/assets/aace1ce3-e20e-4a61-ac18-9ee065dc8fdf" />
+
+
 
 🧪 Demo Results
 <img width="1311" height="554" alt="image" src="https://github.com/user-attachments/assets/ffef0f17-64e0-493f-87ec-02489fc85b89" />
